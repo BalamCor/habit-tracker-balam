@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; worker-src 'self' blob:;">
+    <title>Habit Tracker V2.5 Diamond</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10692/10692798.png"> ```
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+<body>
+
+    <main class="dashboard-container">
+        
+        <header class="dash-header">
+            <div class="header-top">
+                <div class="header-title-group">
+                    <h1 id="dashboard-title">Dashboard 🚀</h1>
+                    <div class="kpi-mini-row">
+                        <span id="streak-display">🔥 Calculando...</span>
+                        <span class="separator-dot">•</span>
+                        <span id="total-days-display">0 reg.</span>
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <button id="btn-stats-scroll" class="btn-icon" title="Ver Estadísticas Globales">📊</button>
+                    
+                    <div class="date-picker-container">
+                        <button id="btn-calendar-trigger" class="btn-icon" title="Cambiar fecha">📅</button>
+                        <input type="date" id="global-date-picker">
+                    </div>
+                    <button id="btn-settings" class="btn-icon" title="Configuración">⚙️</button>
+                </div>
+            </div>
+
+            <div class="progress-hero">
+                <div class="progress-info">
+                    <span class="progress-label" id="progress-label-text">Progreso Diario</span>
+                    <span class="progress-percent" id="hero-percent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="hero-progress-fill" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        </header>
+
+        <section class="dash-section">
+            <div class="section-header-row">
+                <h2 class="section-title">Hábitos</h2>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btn-toggle-all" class="btn-ghost" title="Expandir/Contraer todo">
+                        <i class="material-icons-round" style="font-size:16px;">unfold_more</i>
+                    </button>
+                    <button id="btn-notes" class="btn-ghost" title="Escribir nota">
+                        <i class="material-icons-round" style="font-size:16px;">edit_note</i> Notas
+                    </button>
+                </div>
+            </div>
+
+            <div id="interactive-habit-list" class="habit-list-v2"></div>
+        </section>
+
+        <section id="stats-section-anchor" class="dash-section stats-section">
+            <div class="chart-card full-width">
+                <h3>Historial (90 Días)</h3>
+                <div id="global-heatmap" class="heatmap-container global"></div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>Tendencia (7 Días)</h3>
+                    <div class="chart-container">
+                        <canvas id="chart-weekly"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Distribución</h3>
+                    <div class="chart-container">
+                        <canvas id="chart-habits"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Configurar Hábitos</h2>
+                <button id="btn-close-settings" class="btn-close">×</button>
+            </div>
+            <div class="settings-list" id="settings-list"></div>
+            <div class="add-habit-form">
+                <div class="input-group">
+                    <label>Nombre</label>
+                    <input type="text" id="new-habit-name" placeholder="Ej. Meditar">
+                </div>
+                <div class="input-group">
+                    <label>Icono</label>
+                    <div class="icon-selector">
+                        <input type="text" id="new-habit-emoji" placeholder="😊">
+                        <span>ó</span>
+                        <label for="habit-file-upload" class="btn-upload">📂 Subir</label>
+                        <input type="file" id="habit-file-upload" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Hora Sugerida</label>
+                    <input type="time" id="new-habit-time">
+                </div>
+                <div id="icon-preview" class="icon-preview hidden"></div>
+                <div class="form-actions">
+                    <button id="btn-cancel-edit" class="btn-secondary hidden">Cancelar</button>
+                    <button id="btn-add-habit" class="btn-small-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notes-modal" class="modal hidden">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Notas del Día 📝</h2>
+                <button id="btn-close-notes" class="btn-close">×</button>
+            </div>
+            <textarea id="day-notes" placeholder="¿Cómo te sentiste hoy?" style="height: 150px;"></textarea>
+            <button id="btn-save-notes" class="btn-small-primary full-width">Guardar Nota</button>
+        </div>
+    </div>
+
+    <div id="habit-details-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-habit-title">Estadísticas</h2>
+                <button id="btn-close-details" class="btn-close">×</button>
+            </div>
+            <div class="stats-row">
+                <div class="stat-box">
+                    <span class="stat-label">Racha Actual</span>
+                    <span class="stat-number" id="detail-current-streak">0</span>
+                    <span class="stat-sub">días</span>
+                </div>
+                <div class="stat-box gold">
+                    <span class="stat-label">Racha Legendaria 🏆</span>
+                    <span class="stat-number" id="detail-best-streak">0</span>
+                    <span class="stat-sub" id="detail-best-dates">--</span>
+                </div>
+            </div>
+            <hr class="separator" style="border-color:#333; margin: 20px 0;">
+            <h3 style="font-size:0.9rem; color:#888; margin-bottom:10px;">Historial (30 días)</h3>
+            <div id="detail-heatmap" class="heatmap-container"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html>
