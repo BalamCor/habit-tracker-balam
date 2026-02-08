@@ -2,12 +2,24 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com;">
-    <title>Habit Tracker V2.5 Diamond</title>
+    
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdn.jsdelivr.net https://script.google.com https://script.googleusercontent.com; 
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob: https://script.google.com https://script.googleusercontent.com; 
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+        font-src 'self' https://fonts.gstatic.com; 
+        worker-src 'self' blob:; 
+        connect-src 'self' https://script.google.com https://script.googleusercontent.com;
+        img-src 'self' data: blob: https://cdn-icons-png.flaticon.com;
+    ">
+
+    <title>Habit Tracker V4.0</title>
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10692/10692798.png"> ```
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10692/10692798.png">
+
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 </head>
@@ -28,7 +40,6 @@
 
                 <div class="header-actions">
                     <button id="btn-stats-scroll" class="btn-icon" title="Ver Estadísticas Globales">📊</button>
-                    
                     <div class="date-picker-container">
                         <button id="btn-calendar-trigger" class="btn-icon" title="Cambiar fecha">📅</button>
                         <input type="date" id="global-date-picker">
