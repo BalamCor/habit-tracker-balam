@@ -1,27 +1,23 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 V4.0 Cloud Sync: Google Sheets Backend");
+    console.log("🚀 V4.1 Renderer: Fixed btnNotes & Cloud Sync");
 
     // --- CONFIGURACIÓN DE LA NUBE ---
-    // ¡PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT! 👇
-    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyu1RJZxzYttFTUhes3S-sslHJVtbsiW1xXYS3Vre1wZXOW3ksGPEPHrMxssCb6bac7cg/exec"; 
+    // ¡ASEGÚRATE DE QUE ESTA URL SEA LA TUYA! 👇
+    const SHEET_API_URL = "AQUI_VA_TU_URL_DE_GOOGLE_APPS_SCRIPT_QUE_TERMINA_EN_EXEC"; 
 
     // --- VARIABLES DE ESTADO ---
-    // Guardamos settings en localStorage (configuración) pero el historial va al Sheet
     let currentSettings = JSON.parse(localStorage.getItem('habit_settings')) || { habits: [] };
-    
     let currentViewDate = getLocalISODate();
     let currentDayData = { fecha: currentViewDate, progreso: 0, habitos: {}, nota: "" };
     let globalHistory = [];
-    
-    // Cache simple para no llamar a la API cada segundo
     let isDataLoaded = false;
     let openSections = new Set();
-
-    // Charts
     let weeklyChart = null;
     let habitsChart = null;
+    let editingId = null; 
+    let currentBase64Icon = null;
 
-    // DOM References
+    // --- DOM REFERENCES (DEFINICIONES CRÍTICAS) ---
     const datePickerInput = document.getElementById('global-date-picker');
     const btnCalendarTrigger = document.getElementById('btn-calendar-trigger');
     const dashboardTitle = document.getElementById('dashboard-title');
@@ -31,10 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const heroFill = document.getElementById('hero-progress-fill');
     const streakDisplay = document.getElementById('streak-display');
     const totalDaysDisplay = document.getElementById('total-days-display');
+    
+    // BOTONES QUE DABAN ERROR
     const btnToggleAll = document.getElementById('btn-toggle-all');
+    const btnNotes = document.getElementById('btn-notes'); // <--- AQUÍ ESTÁ EL CULPABLE
     const btnStatsScroll = document.getElementById('btn-stats-scroll');
 
-    // Modals
+    // Modals & Forms
     const settingsModal = document.getElementById('settings-modal');
     const notesModal = document.getElementById('notes-modal');
     const detailsModal = document.getElementById('habit-details-modal');
@@ -49,46 +48,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputFile = document.getElementById('habit-file-upload'); 
     const inputTime = document.getElementById('new-habit-time'); 
     const iconPreview = document.getElementById('icon-preview'); 
+    
+    // Notes Area
     const dayNotesArea = document.getElementById('day-notes'); 
     const btnSaveNotes = document.getElementById('btn-save-notes'); 
     const btnCloseNotes = document.getElementById('btn-close-notes');
-
-    let editingId = null; 
-    let currentBase64Icon = null;
 
     // --- API GOOGLE SHEETS ---
     const cloudAPI = {
         getAllData: async () => {
             try {
-                // Mostramos que está cargando (opcional: poner un spinner)
-                streakDisplay.innerText = "⏳ Sincronizando...";
+                if(streakDisplay) streakDisplay.innerText = "⏳ Sincronizando...";
                 const response = await fetch(SHEET_API_URL);
                 const data = await response.json();
-                console.log("Datos recibidos de Sheet:", data);
+                console.log("✅ Datos recibidos de Sheet:", data);
                 return data;
             } catch (error) {
-                console.error("Error cargando de Sheet:", error);
-                alert("Error de conexión. Revisa tu internet.");
+                console.error("❌ Error cargando de Sheet:", error);
                 return [];
             }
         },
         saveData: async (dayPayload) => {
-            // Guardado optimista (actualizamos UI primero)
-            // Enviamos al Sheet en segundo plano
-            const body = {
-                action: 'save',
-                fecha: dayPayload.fecha,
-                payload: dayPayload
-            };
-            
-            // Usamos 'no-cors' para evitar problemas con Google, o text/plain
+            const body = { action: 'save', fecha: dayPayload.fecha, payload: dayPayload };
             fetch(SHEET_API_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Importante para Apps Script simple
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(body)
-            }).then(() => console.log("Guardado en nube OK"))
-              .catch(e => console.error("Error guardando:", e));
+            }).then(() => console.log("☁️ Guardado en nube OK"))
+              .catch(e => console.error("⚠️ Error guardando:", e));
         },
         saveSettingsLocal: (s) => localStorage.setItem('habit_settings', JSON.stringify(s))
     };
@@ -96,43 +84,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZACIÓN ---
     initDashboard();
 
-    // Listeners básicos
+    // --- LISTENERS (Aquí es donde fallaba si la variable no existía) ---
     if(btnCalendarTrigger) btnCalendarTrigger.addEventListener('click', () => { try { datePickerInput.showPicker(); } catch (e) { datePickerInput.click(); } });
     if(datePickerInput) datePickerInput.addEventListener('change', (e) => { if(!e.target.value) return; currentViewDate = e.target.value; updateDashboardView(); });
+    
+    // Check de seguridad para btnNotes
+    if(btnNotes) {
+        btnNotes.addEventListener('click', () => { 
+            dayNotesArea.value = currentDayData.nota || ""; 
+            if(notesModal) notesModal.classList.remove('hidden'); 
+        });
+    } else {
+        console.warn("Botón de Notas no encontrado en el HTML");
+    }
+
     if(btnToggleAll) btnToggleAll.addEventListener('click', toggleSections);
     if(btnStatsScroll) btnStatsScroll.addEventListener('click', () => document.getElementById('stats-section-anchor')?.scrollIntoView({ behavior: 'smooth' }));
 
     // --- CORE ---
     async function initDashboard() {
-        // Cargar historial completo de la nube SOLO UNA VEZ al inicio
         if (!isDataLoaded) {
             globalHistory = await cloudAPI.getAllData();
             isDataLoaded = true;
         }
         updateDashboardView();
-        
-        // Settings se cargan de local (más rápido y rara vez cambian entre dispositivos al instante)
-        // Si quisieras sync de settings, tendrías que crear otra hoja para ello.
     }
 
     function updateDashboardView() {
-        // Buscar si ya tenemos datos para el día actual en memoria
         const dayRecord = globalHistory.find(d => d.fecha === currentViewDate);
         currentDayData = dayRecord || { fecha: currentViewDate, progreso: 0, habitos: {}, nota: "" };
 
-        // UI Feedback Fecha
         if(datePickerInput) datePickerInput.value = currentViewDate;
         const hoyISO = getLocalISODate();
         if (currentViewDate !== hoyISO) {
             const d = new Date(currentViewDate + 'T00:00:00');
             const bonita = d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
-            dashboardTitle.innerText = `Editando: ${bonita}`;
+            if(dashboardTitle) dashboardTitle.innerText = `Editando: ${bonita}`;
             document.querySelector('.dash-header').classList.add('is-past-mode');
-            progressLabel.innerText = "Histórico";
+            if(progressLabel) progressLabel.innerText = "Histórico";
         } else {
-            dashboardTitle.innerText = "Dashboard 🚀";
+            if(dashboardTitle) dashboardTitle.innerText = "Dashboard 🚀";
             document.querySelector('.dash-header').classList.remove('is-past-mode');
-            progressLabel.innerText = "Progreso Diario";
+            if(progressLabel) progressLabel.innerText = "Progreso Diario";
         }
 
         determineInitialOpenSections();
@@ -143,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCharts();
     }
 
-    // --- LÓGICA DE UI (Igual que antes) ---
+    // --- LÓGICA DE UI ---
     function determineInitialOpenSections() {
         openSections.clear();
         const hour = new Date().getHours();
@@ -219,17 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
             card.classList.add('animating-out');
         }
         setTimeout(async () => {
-            // Actualizar estado local
             currentDayData.habitos[id] = !wasDone;
-            calculateProgress(); // Actualiza progreso numérico
-            
-            // Actualizar memoria global
+            calculateProgress();
             updateGlobalHistoryInMemory(currentDayData);
-            
-            // Renderizar todo de nuevo
             renderHabitList(); renderCharts(); renderHeatmap(); renderKPIs();
-
-            // ENVIAR A LA NUBE (Google Sheet)
             await cloudAPI.saveData(currentDayData);
         }, 250);
     }
@@ -245,9 +231,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateProgressUI() {
         const p = currentDayData.progreso;
-        heroPercent.innerText = `${p}%`; heroFill.style.width = `${p}%`;
-        if(p===100) { heroPercent.classList.add('gold'); heroFill.classList.add('gold'); heroPercent.style.color=''; heroFill.style.backgroundColor=''; }
-        else { heroPercent.classList.remove('gold'); heroFill.classList.remove('gold'); heroPercent.style.color='#e0e0e0'; heroFill.style.backgroundColor='#00e676'; }
+        if(heroPercent) {
+            heroPercent.innerText = `${p}%`; 
+            if(p===100) { heroPercent.classList.add('gold'); heroPercent.style.color=''; }
+            else { heroPercent.classList.remove('gold'); heroPercent.style.color='#e0e0e0'; }
+        }
+        if(heroFill) {
+            heroFill.style.width = `${p}%`;
+            if(p===100) { heroFill.classList.add('gold'); heroFill.style.backgroundColor=''; }
+            else { heroFill.classList.remove('gold'); heroFill.style.backgroundColor='#00e676'; }
+        }
     }
 
     // --- UTILS ---
@@ -257,9 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function triggerConfetti() { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
 
     // --- MANEJO DE SETTINGS (Local) ---
-    // Nota: Las configuraciones se guardan en el dispositivo, no en el sheet, para simplicidad.
-    btnSettings.addEventListener('click', () => { renderSettingsList(); settingsModal.classList.remove('hidden'); });
-    btnCloseSettings.addEventListener('click', () => { settingsModal.classList.add('hidden'); initDashboard(); });
+    if(btnSettings) btnSettings.addEventListener('click', () => { renderSettingsList(); settingsModal.classList.remove('hidden'); });
+    if(btnCloseSettings) btnCloseSettings.addEventListener('click', () => { settingsModal.classList.add('hidden'); initDashboard(); });
     
     async function saveNewOrder() {
         const ids = [...settingsList.querySelectorAll('.settings-item')].map(i => i.dataset.id);
@@ -270,18 +262,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.deleteHabit = (idx) => { if(confirm('¿Borrar?')) { currentSettings.habits.splice(idx, 1); cloudAPI.saveSettingsLocal(currentSettings); renderSettingsList(); } };
     window.editHabit = (id) => { const h = currentSettings.habits.find(x => x.id === id); if(h) { editingId = id; inputName.value = h.name; inputTime.value = h.time || ''; if(h.icon.startsWith('data:')) { currentBase64Icon = h.icon; iconPreview.innerHTML = `<img src="${h.icon}" style="height:100%">`; iconPreview.classList.remove('hidden'); } else { inputEmoji.value = h.icon; } btnSaveHabit.innerText = "Actualizar"; btnCancelEdit.classList.remove('hidden'); } };
     
-    // Listeners Forms
-    btnSaveHabit.addEventListener('click', () => { 
+    if(btnSaveHabit) btnSaveHabit.addEventListener('click', () => { 
         const n=inputName.value.trim(); const i=currentBase64Icon||inputEmoji.value.trim()||'🔹'; const t=inputTime.value; if(!n) return; 
         if(editingId){ const idx=currentSettings.habits.findIndex(h=>h.id===editingId); if(idx!==-1) currentSettings.habits[idx]={...currentSettings.habits[idx], name:n, icon:i, time:t}; } 
         else { currentSettings.habits.push({id:'h-'+Date.now(), name:n, icon:i, time:t}); } 
         cloudAPI.saveSettingsLocal(currentSettings); 
         btnCancelEdit.click(); renderSettingsList(); 
     });
-    btnCancelEdit.addEventListener('click', () => { editingId=null; inputName.value=''; inputEmoji.value=''; inputTime.value=''; currentBase64Icon=null; iconPreview.classList.add('hidden'); iconPreview.innerHTML=''; btnSaveHabit.innerText="Guardar"; btnCancelEdit.classList.add('hidden'); });
+    if(btnCancelEdit) btnCancelEdit.addEventListener('click', () => { editingId=null; inputName.value=''; inputEmoji.value=''; inputTime.value=''; currentBase64Icon=null; iconPreview.classList.add('hidden'); iconPreview.innerHTML=''; btnSaveHabit.innerText="Guardar"; btnCancelEdit.classList.add('hidden'); });
     
-    // Drag logic & Icons logic se mantienen igual...
     function renderSettingsList() {
+        if(!settingsList) return;
         settingsList.innerHTML = '';
         currentSettings.habits.forEach((h, idx) => {
             const d = document.createElement('div'); d.className='settings-item'; d.draggable=true; d.dataset.id=h.id;
@@ -291,15 +282,14 @@ document.addEventListener('DOMContentLoaded', () => {
             settingsList.appendChild(d);
         });
     }
-    settingsList.addEventListener('dragover', e => { e.preventDefault(); const after=getDragAfterElement(settingsList, e.clientY); const drag=document.querySelector('.dragging'); if(drag){ if(after==null) settingsList.appendChild(drag); else settingsList.insertBefore(drag, after); } });
+    if(settingsList) settingsList.addEventListener('dragover', e => { e.preventDefault(); const after=getDragAfterElement(settingsList, e.clientY); const drag=document.querySelector('.dragging'); if(drag){ if(after==null) settingsList.appendChild(drag); else settingsList.insertBefore(drag, after); } });
     function getDragAfterElement(container, y) { return [...container.querySelectorAll('.settings-item:not(.dragging)')].reduce((closest, child) => { const box=child.getBoundingClientRect(); const offset=y-box.top-box.height/2; if(offset<0 && offset>closest.offset) return {offset:offset, element:child}; else return closest; }, {offset:Number.NEGATIVE_INFINITY}).element; }
-    inputFile.addEventListener('change', e => { const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>{ currentBase64Icon=ev.target.result; iconPreview.innerHTML=`<img src="${currentBase64Icon}" style="height:100%">`; iconPreview.classList.remove('hidden'); inputEmoji.value=''; }; r.readAsDataURL(f); } });
-    inputEmoji.addEventListener('input', () => { if(inputEmoji.value){ currentBase64Icon=null; inputFile.value=''; iconPreview.classList.add('hidden'); iconPreview.innerHTML=''; } });
+    if(inputFile) inputFile.addEventListener('change', e => { const f=e.target.files[0]; if(f){ const r=new FileReader(); r.onload=ev=>{ currentBase64Icon=ev.target.result; iconPreview.innerHTML=`<img src="${currentBase64Icon}" style="height:100%">`; iconPreview.classList.remove('hidden'); inputEmoji.value=''; }; r.readAsDataURL(f); } });
+    if(inputEmoji) inputEmoji.addEventListener('input', () => { if(inputEmoji.value){ currentBase64Icon=null; inputFile.value=''; iconPreview.classList.add('hidden'); iconPreview.innerHTML=''; } });
 
     // --- NOTES MODAL ---
-    btnNotes.addEventListener('click', () => { dayNotesArea.value = currentDayData.nota || ""; notesModal.classList.remove('hidden'); });
-    btnSaveNotes.addEventListener('click', async () => { currentDayData.nota = dayNotesArea.value; await cloudAPI.saveData(currentDayData); notesModal.classList.add('hidden'); });
-    btnCloseNotes.addEventListener('click', () => notesModal.classList.add('hidden'));
+    if(btnSaveNotes) btnSaveNotes.addEventListener('click', async () => { currentDayData.nota = dayNotesArea.value; await cloudAPI.saveData(currentDayData); notesModal.classList.add('hidden'); });
+    if(btnCloseNotes) btnCloseNotes.addEventListener('click', () => notesModal.classList.add('hidden'));
 
     // --- DETAILS ---
     window.openHabitDetails = (id, name) => {
@@ -325,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         detailsModal.classList.remove('hidden');
     }
-    btnCloseDetails.addEventListener('click', () => detailsModal.classList.add('hidden'));
+    if(btnCloseDetails) btnCloseDetails.addEventListener('click', () => detailsModal.classList.add('hidden'));
 
     // --- CHARTS & KPIS ---
     function renderKPIs() {
@@ -350,21 +340,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCharts() {
-        // Line
+        // Line Chart
         const labels=[], data=[]; const hoy=new Date();
         for(let i=6; i>=0; i--) { const d=new Date(); d.setDate(hoy.getDate()-i); const iso=d.toLocaleDateString('en-CA'); const r=globalHistory.find(x=>x.fecha===iso); labels.push(d.toLocaleDateString('es-MX',{weekday:'short'})); data.push(r?r.progreso:0); }
-        const ctxL=document.getElementById('chart-weekly'); if(weeklyChart) weeklyChart.destroy();
-        weeklyChart=new Chart(ctxL, {type:'line', data:{labels, datasets:[{data, borderColor:'#00e676', backgroundColor:'rgba(0,230,118,0.1)', fill:true, tension:0.4, pointRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100, grid:{color:'#333', borderDash:[5,5]}, border:{display:false}}, x:{grid:{display:false}, border:{display:false}}}, layout:{padding:{top:10, bottom:10, left:0, right:0}}}});
+        const ctxL=document.getElementById('chart-weekly'); 
+        if(ctxL) {
+            if(weeklyChart) weeklyChart.destroy();
+            weeklyChart=new Chart(ctxL, {type:'line', data:{labels, datasets:[{data, borderColor:'#00e676', backgroundColor:'rgba(0,230,118,0.1)', fill:true, tension:0.4, pointRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100, grid:{color:'#333', borderDash:[5,5]}, border:{display:false}}, x:{grid:{display:false}, border:{display:false}}}, layout:{padding:{top:10, bottom:10, left:0, right:0}}}});
+        }
 
-        // Donut
+        // Donut Chart
         const counts={}; globalHistory.forEach(d=>{ if(d.habitos) Object.keys(d.habitos).forEach(hid=>{ if(d.habitos[hid]){ const h=currentSettings.habits.find(x=>x.id===hid); if(h) counts[h.name]=(counts[h.name]||0)+1; } }); });
         const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
         let l=[], d=[];
         if(sorted.length>5){ const top=sorted.slice(0,5); const other=sorted.slice(5).reduce((a,c)=>a+c[1],0); top.forEach(i=>{l.push(i[0]); d.push(i[1]);}); l.push('Otros'); d.push(other); }
         else sorted.forEach(i=>{l.push(i[0]); d.push(i[1]);});
 
-        const ctxD=document.getElementById('chart-habits'); if(habitsChart) habitsChart.destroy();
-        habitsChart=new Chart(ctxD, {type:'doughnut', data:{labels:l, datasets:[{data:d, backgroundColor:['#00e676','#2979ff','#ffea00','#ff1744','#d500f9','#666'], borderWidth:0, hoverOffset:15}]}, options:{responsive:true, maintainAspectRatio:false, cutout:'65%', layout:{padding:20}, plugins:{legend:{position:'bottom', labels:{color:'#aaa', padding:20, boxWidth:12, font:{size:12}}}}}});
+        const ctxD=document.getElementById('chart-habits'); 
+        if(ctxD) {
+            if(habitsChart) habitsChart.destroy();
+            habitsChart=new Chart(ctxD, {type:'doughnut', data:{labels:l, datasets:[{data:d, backgroundColor:['#00e676','#2979ff','#ffea00','#ff1744','#d500f9','#666'], borderWidth:0, hoverOffset:15}]}, options:{responsive:true, maintainAspectRatio:false, cutout:'65%', layout:{padding:20}, plugins:{legend:{position:'bottom', labels:{color:'#aaa', padding:20, boxWidth:12, font:{size:12}}}}}});
+        }
     }
 
     function renderHeatmap() {
