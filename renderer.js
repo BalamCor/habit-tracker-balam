@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 V4.1 Renderer: Fixed btnNotes & Cloud Sync");
+    console.log("🚀 V4.2 Renderer: Final Fixes (Definitions & Sync)");
 
     // --- CONFIGURACIÓN DE LA NUBE ---
-    // ¡ASEGÚRATE DE QUE ESTA URL SEA LA TUYA! 👇
+    // 👇👇👇 ¡PEGA AQUÍ TU URL DEL SCRIPT! 👇👇👇
     const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyu1RJZxzYttFTUhes3S-sslHJVtbsiW1xXYS3Vre1wZXOW3ksGPEPHrMxssCb6bac7cg/exec"; 
 
     // --- VARIABLES DE ESTADO ---
@@ -17,29 +17,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingId = null; 
     let currentBase64Icon = null;
 
-    // --- DOM REFERENCES (DEFINICIONES CRÍTICAS) ---
+    // --- DOM REFERENCES (DEFINICIONES SEGURAS) ---
+    // Header & KPIs
     const datePickerInput = document.getElementById('global-date-picker');
     const btnCalendarTrigger = document.getElementById('btn-calendar-trigger');
     const dashboardTitle = document.getElementById('dashboard-title');
     const progressLabel = document.getElementById('progress-label-text');
-    const habitListEl = document.getElementById('interactive-habit-list');
     const heroPercent = document.getElementById('hero-percent');
     const heroFill = document.getElementById('hero-progress-fill');
     const streakDisplay = document.getElementById('streak-display');
     const totalDaysDisplay = document.getElementById('total-days-display');
-    
-    // BOTONES QUE DABAN ERROR
-    const btnToggleAll = document.getElementById('btn-toggle-all');
-    const btnNotes = document.getElementById('btn-notes'); // <--- AQUÍ ESTÁ EL CULPABLE
     const btnStatsScroll = document.getElementById('btn-stats-scroll');
 
-    // Modals & Forms
+    // List & Actions
+    const habitListEl = document.getElementById('interactive-habit-list');
+    const btnToggleAll = document.getElementById('btn-toggle-all');
+    const btnNotes = document.getElementById('btn-notes'); // <--- AQUI SE DEFINE
+
+    // Modals
     const settingsModal = document.getElementById('settings-modal');
     const notesModal = document.getElementById('notes-modal');
     const detailsModal = document.getElementById('habit-details-modal');
+    
+    // Close Buttons
     const btnCloseDetails = document.getElementById('btn-close-details');
-    const btnSettings = document.getElementById('btn-settings'); 
     const btnCloseSettings = document.getElementById('btn-close-settings'); 
+    const btnCloseNotes = document.getElementById('btn-close-notes');
+
+    // Settings Form
+    const btnSettings = document.getElementById('btn-settings'); 
     const settingsList = document.getElementById('settings-list');
     const btnSaveHabit = document.getElementById('btn-add-habit'); 
     const btnCancelEdit = document.getElementById('btn-cancel-edit');
@@ -49,10 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputTime = document.getElementById('new-habit-time'); 
     const iconPreview = document.getElementById('icon-preview'); 
     
-    // Notes Area
+    // Notes Form
     const dayNotesArea = document.getElementById('day-notes'); 
     const btnSaveNotes = document.getElementById('btn-save-notes'); 
-    const btnCloseNotes = document.getElementById('btn-close-notes');
 
     // --- API GOOGLE SHEETS ---
     const cloudAPI = {
@@ -65,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return data;
             } catch (error) {
                 console.error("❌ Error cargando de Sheet:", error);
+                if(streakDisplay) streakDisplay.innerText = "⚠️ Error Sync";
                 return [];
             }
         },
@@ -84,18 +90,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZACIÓN ---
     initDashboard();
 
-    // --- LISTENERS (Aquí es donde fallaba si la variable no existía) ---
+    // --- LISTENERS ---
+    // Usamos 'if' para evitar errores si algún elemento no carga
     if(btnCalendarTrigger) btnCalendarTrigger.addEventListener('click', () => { try { datePickerInput.showPicker(); } catch (e) { datePickerInput.click(); } });
     if(datePickerInput) datePickerInput.addEventListener('change', (e) => { if(!e.target.value) return; currentViewDate = e.target.value; updateDashboardView(); });
     
-    // Check de seguridad para btnNotes
     if(btnNotes) {
         btnNotes.addEventListener('click', () => { 
             dayNotesArea.value = currentDayData.nota || ""; 
             if(notesModal) notesModal.classList.remove('hidden'); 
         });
-    } else {
-        console.warn("Botón de Notas no encontrado en el HTML");
     }
 
     if(btnToggleAll) btnToggleAll.addEventListener('click', toggleSections);
@@ -115,6 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentDayData = dayRecord || { fecha: currentViewDate, progreso: 0, habitos: {}, nota: "" };
 
         if(datePickerInput) datePickerInput.value = currentViewDate;
+        
+        // Time Travel UI Check
         const hoyISO = getLocalISODate();
         if (currentViewDate !== hoyISO) {
             const d = new Date(currentViewDate + 'T00:00:00');
@@ -249,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateGlobalHistoryInMemory(d) { const idx = globalHistory.findIndex(x => x.fecha === d.fecha); if(idx!==-1) globalHistory[idx]=d; else globalHistory.push(d); }
     function triggerConfetti() { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
 
-    // --- MANEJO DE SETTINGS (Local) ---
+    // --- SETTINGS (Local) ---
     if(btnSettings) btnSettings.addEventListener('click', () => { renderSettingsList(); settingsModal.classList.remove('hidden'); });
     if(btnCloseSettings) btnCloseSettings.addEventListener('click', () => { settingsModal.classList.add('hidden'); initDashboard(); });
     
