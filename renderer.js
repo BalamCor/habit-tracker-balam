@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN DE LA NUBE ---
     // ¡ASEGÚRATE DE QUE ESTA URL SEA LA TUYA! 👇
-    const SHEET_API_URL = "AQUI_VA_TU_URL_DE_GOOGLE_APPS_SCRIPT_QUE_TERMINA_EN_EXEC"; 
+    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyu1RJZxzYttFTUhes3S-sslHJVtbsiW1xXYS3Vre1wZXOW3ksGPEPHrMxssCb6bac7cg/exec"; 
 
     // --- VARIABLES DE ESTADO ---
     let currentSettings = JSON.parse(localStorage.getItem('habit_settings')) || { habits: [] };
