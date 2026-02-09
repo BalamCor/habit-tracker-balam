@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONFIGURACIÓN DE LA NUBE ---
     // 👇👇👇 ¡PEGA AQUÍ TU URL DEL SCRIPT! 👇👇👇
-    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyu1RJZxzYttFTUhes3S-sslHJVtbsiW1xXYS3Vre1wZXOW3ksGPEPHrMxssCb6bac7cg/exec"; 
+    const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbxl2YZtruKLnjhp1Pzh3cOayyaz4kRDHD8Enz6wRA9pceOIbEUxTlgGEYc3d_ln46BOQA/exec"; 
 
     // --- VARIABLES DE ESTADO ---
     let currentSettings = JSON.parse(localStorage.getItem('habit_settings')) || { habits: [] };
