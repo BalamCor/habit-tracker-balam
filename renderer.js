@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 V4.2 Renderer: Final Fixes (Definitions & Sync)");
+    console.log("🚀 V5.0 Web: Final Production Version");
 
     // --- CONFIGURACIÓN DE LA NUBE ---
     // 👇👇👇 ¡PEGA AQUÍ TU URL DEL SCRIPT! 👇👇👇
@@ -17,8 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingId = null; 
     let currentBase64Icon = null;
 
-    // --- DOM REFERENCES (DEFINICIONES SEGURAS) ---
-    // Header & KPIs
+    // --- DOM REFERENCES ---
     const datePickerInput = document.getElementById('global-date-picker');
     const btnCalendarTrigger = document.getElementById('btn-calendar-trigger');
     const dashboardTitle = document.getElementById('dashboard-title');
@@ -28,23 +27,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const streakDisplay = document.getElementById('streak-display');
     const totalDaysDisplay = document.getElementById('total-days-display');
     const btnStatsScroll = document.getElementById('btn-stats-scroll');
-
-    // List & Actions
     const habitListEl = document.getElementById('interactive-habit-list');
     const btnToggleAll = document.getElementById('btn-toggle-all');
-    const btnNotes = document.getElementById('btn-notes'); // <--- AQUI SE DEFINE
+    const btnNotes = document.getElementById('btn-notes');
 
     // Modals
     const settingsModal = document.getElementById('settings-modal');
     const notesModal = document.getElementById('notes-modal');
     const detailsModal = document.getElementById('habit-details-modal');
-    
-    // Close Buttons
     const btnCloseDetails = document.getElementById('btn-close-details');
     const btnCloseSettings = document.getElementById('btn-close-settings'); 
     const btnCloseNotes = document.getElementById('btn-close-notes');
 
-    // Settings Form
+    // Forms
     const btnSettings = document.getElementById('btn-settings'); 
     const settingsList = document.getElementById('settings-list');
     const btnSaveHabit = document.getElementById('btn-add-habit'); 
@@ -54,8 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputFile = document.getElementById('habit-file-upload'); 
     const inputTime = document.getElementById('new-habit-time'); 
     const iconPreview = document.getElementById('icon-preview'); 
-    
-    // Notes Form
     const dayNotesArea = document.getElementById('day-notes'); 
     const btnSaveNotes = document.getElementById('btn-save-notes'); 
 
@@ -63,18 +56,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const cloudAPI = {
         getAllData: async () => {
             try {
-                if(streakDisplay) streakDisplay.innerText = "⏳ Sincronizando...";
+                if(streakDisplay) streakDisplay.innerText = "⏳...";
                 const response = await fetch(SHEET_API_URL);
                 const data = await response.json();
                 console.log("✅ Datos recibidos de Sheet:", data);
                 return data;
             } catch (error) {
                 console.error("❌ Error cargando de Sheet:", error);
-                if(streakDisplay) streakDisplay.innerText = "⚠️ Error Sync";
+                if(streakDisplay) streakDisplay.innerText = "⚠️ Offline";
                 return [];
             }
         },
         saveData: async (dayPayload) => {
+            // Guardado optimista (para que la UI no se trabe)
             const body = { action: 'save', fecha: dayPayload.fecha, payload: dayPayload };
             fetch(SHEET_API_URL, {
                 method: 'POST',
@@ -90,22 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZACIÓN ---
     initDashboard();
 
-    // --- LISTENERS ---
-    // Usamos 'if' para evitar errores si algún elemento no carga
+    // Listeners básicos
     if(btnCalendarTrigger) btnCalendarTrigger.addEventListener('click', () => { try { datePickerInput.showPicker(); } catch (e) { datePickerInput.click(); } });
     if(datePickerInput) datePickerInput.addEventListener('change', (e) => { if(!e.target.value) return; currentViewDate = e.target.value; updateDashboardView(); });
-    
-    if(btnNotes) {
-        btnNotes.addEventListener('click', () => { 
-            dayNotesArea.value = currentDayData.nota || ""; 
-            if(notesModal) notesModal.classList.remove('hidden'); 
-        });
-    }
-
+    if(btnNotes) btnNotes.addEventListener('click', () => { dayNotesArea.value = currentDayData.nota || ""; if(notesModal) notesModal.classList.remove('hidden'); });
     if(btnToggleAll) btnToggleAll.addEventListener('click', toggleSections);
     if(btnStatsScroll) btnStatsScroll.addEventListener('click', () => document.getElementById('stats-section-anchor')?.scrollIntoView({ behavior: 'smooth' }));
 
-    // --- CORE ---
+    // --- CORE LOGIC ---
     async function initDashboard() {
         if (!isDataLoaded) {
             globalHistory = await cloudAPI.getAllData();
@@ -115,12 +101,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateDashboardView() {
-        const dayRecord = globalHistory.find(d => d.fecha === currentViewDate);
-        currentDayData = dayRecord || { fecha: currentViewDate, progreso: 0, habitos: {}, nota: "" };
-
-        if(datePickerInput) datePickerInput.value = currentViewDate;
+        // CORRECCIÓN DE FECHA: Comparamos solo los primeros 10 caracteres (YYYY-MM-DD)
+        const dayRecord = globalHistory.find(d => d.fecha.substring(0, 10) === currentViewDate);
         
-        // Time Travel UI Check
+        if (dayRecord) {
+            currentDayData = dayRecord;
+            currentDayData.fecha = currentViewDate; // Aseguramos formato limpio
+        } else {
+            currentDayData = { fecha: currentViewDate, progreso: 0, habitos: {}, nota: "" };
+        }
+
+        // UI Time Travel
+        if(datePickerInput) datePickerInput.value = currentViewDate;
         const hoyISO = getLocalISODate();
         if (currentViewDate !== hoyISO) {
             const d = new Date(currentViewDate + 'T00:00:00');
@@ -142,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCharts();
     }
 
-    // --- LÓGICA DE UI ---
+    // --- UI HELPERS ---
     function determineInitialOpenSections() {
         openSections.clear();
         const hour = new Date().getHours();
@@ -220,7 +212,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(async () => {
             currentDayData.habitos[id] = !wasDone;
             calculateProgress();
-            updateGlobalHistoryInMemory(currentDayData);
+            
+            // Actualizar memoria global
+            const idx = globalHistory.findIndex(d => d.fecha === currentDayData.fecha);
+            if(idx !== -1) globalHistory[idx] = currentDayData; else globalHistory.push(currentDayData);
+            
             renderHabitList(); renderCharts(); renderHeatmap(); renderKPIs();
             await cloudAPI.saveData(currentDayData);
         }, 250);
@@ -252,7 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- UTILS ---
     function getHabitContext(t) { if(!t) return 'anytime'; const h = parseInt(t.split(':')[0]); if(h>=5 && h<12) return 'morning'; if(h>=12 && h<19) return 'afternoon'; if(h>=19 || h<5) return 'night'; return 'anytime'; }
     function getLocalISODate() { return new Date().toLocaleDateString('en-CA'); }
-    function updateGlobalHistoryInMemory(d) { const idx = globalHistory.findIndex(x => x.fecha === d.fecha); if(idx!==-1) globalHistory[idx]=d; else globalHistory.push(d); }
     function triggerConfetti() { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
 
     // --- SETTINGS (Local) ---
@@ -300,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DETAILS ---
     window.openHabitDetails = (id, name) => {
         document.getElementById('modal-habit-title').innerText = name;
-        const done = globalHistory.filter(d => d.habitos && d.habitos[id]).map(d => d.fecha).sort((a,b)=>new Date(a)-new Date(b));
+        const done = globalHistory.filter(d => d.habitos && d.habitos[id]).map(d => d.fecha.substring(0,10)).sort((a,b)=>new Date(a)-new Date(b));
         let streak=0, max=0, temp=0;
         if(done.length>0) {
             const start=new Date(done[0]); const end=new Date();
@@ -333,10 +328,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const total = globalHistory.length; let streak = 0;
         const sorted = [...globalHistory].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
         let checkDate = new Date(); let searching = true;
-        if(!sorted.find(d => d.fecha === getLocalISODate())) checkDate.setDate(checkDate.getDate() - 1);
+        if(!sorted.find(d => d.fecha.substring(0,10) === getLocalISODate())) checkDate.setDate(checkDate.getDate() - 1);
         while(searching) {
             const iso = checkDate.toLocaleDateString('en-CA');
-            const reg = sorted.find(d => d.fecha === iso);
+            const reg = sorted.find(d => d.fecha.substring(0,10) === iso);
             if(reg && reg.progreso >= 90) { streak++; checkDate.setDate(checkDate.getDate() - 1); }
             else searching = false;
             if(streak > 3650) searching = false;
@@ -348,7 +343,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderCharts() {
         // Line Chart
         const labels=[], data=[]; const hoy=new Date();
-        for(let i=6; i>=0; i--) { const d=new Date(); d.setDate(hoy.getDate()-i); const iso=d.toLocaleDateString('en-CA'); const r=globalHistory.find(x=>x.fecha===iso); labels.push(d.toLocaleDateString('es-MX',{weekday:'short'})); data.push(r?r.progreso:0); }
+        for(let i=6; i>=0; i--) { const d=new Date(); d.setDate(hoy.getDate()-i); const iso=d.toLocaleDateString('en-CA'); 
+        const r=globalHistory.find(x=>x.fecha.substring(0,10)===iso); labels.push(d.toLocaleDateString('es-MX',{weekday:'short'})); data.push(r?r.progreso:0); }
         const ctxL=document.getElementById('chart-weekly'); 
         if(ctxL) {
             if(weeklyChart) weeklyChart.destroy();
@@ -371,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderHeatmap() {
         const c=document.getElementById('global-heatmap'); if(!c) return; c.innerHTML=''; const hoy=new Date();
-        for(let i=89; i>=0; i--){ const d=new Date(); d.setDate(hoy.getDate()-i); const iso=d.toLocaleDateString('en-CA'); const r=globalHistory.find(x=>x.fecha===iso); const p=r?r.progreso:0; const el=document.createElement('div'); el.className='heatmap-day'; el.title=`${iso}: ${p}%`; if(p==100) el.classList.add('l4'); else if(p>60) el.classList.add('l3'); else if(p>30) el.classList.add('l2'); else if(p>0) el.classList.add('l1'); c.appendChild(el); }
+        for(let i=89; i>=0; i--){ const d=new Date(); d.setDate(hoy.getDate()-i); const iso=d.toLocaleDateString('en-CA'); 
+        const r=globalHistory.find(x=>x.fecha.substring(0,10)===iso); const p=r?r.progreso:0; const el=document.createElement('div'); el.className='heatmap-day'; el.title=`${iso}: ${p}%`; if(p==100) el.classList.add('l4'); else if(p>60) el.classList.add('l3'); else if(p>30) el.classList.add('l2'); else if(p>0) el.classList.add('l1'); c.appendChild(el); }
     }
 });
