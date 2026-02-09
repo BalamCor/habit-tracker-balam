@@ -1,17 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("🚀 V5.0 Web: Final Production Version");
+    console.log("🚀 V6.0 Web: Full Cloud Sync (Habits & History)");
 
     // --- CONFIGURACIÓN DE LA NUBE ---
-    // 👇👇👇 ¡PEGA AQUÍ TU URL DEL SCRIPT! 👇👇👇
+    // 👇 TU URL ESTÁ AQUÍ CORRECTAMENTE 👇
     const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbxl2YZtruKLnjhp1Pzh3cOayyaz4kRDHD8Enz6wRA9pceOIbEUxTlgGEYc3d_ln46BOQA/exec"; 
 
     // --- VARIABLES DE ESTADO ---
-    let currentSettings = JSON.parse(localStorage.getItem('habit_settings')) || { habits: [] };
+    let currentSettings = { habits: [] }; 
+    let globalHistory = [];
+    
     let currentViewDate = getLocalISODate();
     let currentDayData = { fecha: currentViewDate, progreso: 0, habitos: {}, nota: "" };
-    let globalHistory = [];
     let isDataLoaded = false;
     let openSections = new Set();
+    
     let weeklyChart = null;
     let habitsChart = null;
     let editingId = null; 
@@ -54,37 +56,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- API GOOGLE SHEETS ---
     const cloudAPI = {
-        getAllData: async () => {
+        fetchAll: async () => {
             try {
                 if(streakDisplay) streakDisplay.innerText = "⏳...";
                 const response = await fetch(SHEET_API_URL);
-                const data = await response.json();
-                console.log("✅ Datos recibidos de Sheet:", data);
-                return data;
+                const bigData = await response.json();
+                console.log("✅ Datos recibidos de la Nube:", bigData);
+                return bigData; // { history: [], settings: {} }
             } catch (error) {
-                console.error("❌ Error cargando de Sheet:", error);
+                console.error("❌ Error conectando a Sheet:", error);
                 if(streakDisplay) streakDisplay.innerText = "⚠️ Offline";
-                return [];
+                return null;
             }
         },
         saveData: async (dayPayload) => {
-            // Guardado optimista (para que la UI no se trabe)
-            const body = { action: 'save', fecha: dayPayload.fecha, payload: dayPayload };
-            fetch(SHEET_API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(body)
-            }).then(() => console.log("☁️ Guardado en nube OK"))
-              .catch(e => console.error("⚠️ Error guardando:", e));
+            console.log("📤 Guardando progreso...");
+            const body = { action: 'save_day', fecha: dayPayload.fecha, payload: dayPayload };
+            sendToCloud(body);
         },
-        saveSettingsLocal: (s) => localStorage.setItem('habit_settings', JSON.stringify(s))
+        saveSettings: async (settingsPayload) => {
+            console.log("💾 Guardando configuración de hábitos...");
+            const body = { action: 'save_settings', payload: settingsPayload };
+            sendToCloud(body);
+        }
     };
+
+    function sendToCloud(body) {
+        fetch(SHEET_API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(body)
+        }).then(() => console.log("☁️ Sync OK"))
+          .catch(e => console.error("⚠️ Sync Error:", e));
+    }
 
     // --- INICIALIZACIÓN ---
     initDashboard();
 
-    // Listeners básicos
+    // Listeners
     if(btnCalendarTrigger) btnCalendarTrigger.addEventListener('click', () => { try { datePickerInput.showPicker(); } catch (e) { datePickerInput.click(); } });
     if(datePickerInput) datePickerInput.addEventListener('change', (e) => { if(!e.target.value) return; currentViewDate = e.target.value; updateDashboardView(); });
     if(btnNotes) btnNotes.addEventListener('click', () => { dayNotesArea.value = currentDayData.nota || ""; if(notesModal) notesModal.classList.remove('hidden'); });
@@ -94,19 +104,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CORE LOGIC ---
     async function initDashboard() {
         if (!isDataLoaded) {
-            globalHistory = await cloudAPI.getAllData();
+            // Descarga MAESTRA inicial
+            const cloudData = await cloudAPI.fetchAll();
+            if (cloudData) {
+                globalHistory = cloudData.history || [];
+                // Si hay settings en la nube, los usamos
+                if (cloudData.settings && cloudData.settings.habits) {
+                    currentSettings = cloudData.settings;
+                } else {
+                    // Si es nuevo, creamos un hábito de ejemplo y lo subimos
+                    currentSettings = { habits: [{ id: "h1", name: "Primer Hábito", icon: "🚀", time: "09:00" }] };
+                    cloudAPI.saveSettings(currentSettings);
+                }
+            }
             isDataLoaded = true;
         }
         updateDashboardView();
     }
 
     function updateDashboardView() {
-        // CORRECCIÓN DE FECHA: Comparamos solo los primeros 10 caracteres (YYYY-MM-DD)
+        // Encontrar datos del día (substring 10 para evitar duplicados por hora)
         const dayRecord = globalHistory.find(d => d.fecha.substring(0, 10) === currentViewDate);
-        
         if (dayRecord) {
             currentDayData = dayRecord;
-            currentDayData.fecha = currentViewDate; // Aseguramos formato limpio
+            currentDayData.fecha = currentViewDate; 
         } else {
             currentDayData = { fecha: currentViewDate, progreso: 0, habitos: {}, nota: "" };
         }
@@ -134,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCharts();
     }
 
-    // --- UI HELPERS ---
+    // --- RENDERIZADO UI ---
     function determineInitialOpenSections() {
         openSections.clear();
         const hour = new Date().getHours();
@@ -213,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentDayData.habitos[id] = !wasDone;
             calculateProgress();
             
-            // Actualizar memoria global
+            // Sync Memoria
             const idx = globalHistory.findIndex(d => d.fecha === currentDayData.fecha);
             if(idx !== -1) globalHistory[idx] = currentDayData; else globalHistory.push(currentDayData);
             
@@ -250,26 +271,40 @@ document.addEventListener('DOMContentLoaded', () => {
     function getLocalISODate() { return new Date().toLocaleDateString('en-CA'); }
     function triggerConfetti() { confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); }
 
-    // --- SETTINGS (Local) ---
+    // --- GESTIÓN DE SETTINGS (AHORA EN NUBE) ---
     if(btnSettings) btnSettings.addEventListener('click', () => { renderSettingsList(); settingsModal.classList.remove('hidden'); });
     if(btnCloseSettings) btnCloseSettings.addEventListener('click', () => { settingsModal.classList.add('hidden'); initDashboard(); });
     
     async function saveNewOrder() {
         const ids = [...settingsList.querySelectorAll('.settings-item')].map(i => i.dataset.id);
         const newArr = []; ids.forEach(id => { const h = currentSettings.habits.find(x => x.id === id); if(h) newArr.push(h); });
-        currentSettings.habits = newArr; cloudAPI.saveSettingsLocal(currentSettings);
+        currentSettings.habits = newArr; 
+        
+        // ¡GUARDAMOS EN LA NUBE!
+        await cloudAPI.saveSettings(currentSettings);
     }
 
-    window.deleteHabit = (idx) => { if(confirm('¿Borrar?')) { currentSettings.habits.splice(idx, 1); cloudAPI.saveSettingsLocal(currentSettings); renderSettingsList(); } };
+    window.deleteHabit = (idx) => { 
+        if(confirm('¿Borrar?')) { 
+            currentSettings.habits.splice(idx, 1); 
+            cloudAPI.saveSettings(currentSettings); // Guardar en nube
+            renderSettingsList(); 
+        } 
+    };
+    
     window.editHabit = (id) => { const h = currentSettings.habits.find(x => x.id === id); if(h) { editingId = id; inputName.value = h.name; inputTime.value = h.time || ''; if(h.icon.startsWith('data:')) { currentBase64Icon = h.icon; iconPreview.innerHTML = `<img src="${h.icon}" style="height:100%">`; iconPreview.classList.remove('hidden'); } else { inputEmoji.value = h.icon; } btnSaveHabit.innerText = "Actualizar"; btnCancelEdit.classList.remove('hidden'); } };
     
     if(btnSaveHabit) btnSaveHabit.addEventListener('click', () => { 
         const n=inputName.value.trim(); const i=currentBase64Icon||inputEmoji.value.trim()||'🔹'; const t=inputTime.value; if(!n) return; 
         if(editingId){ const idx=currentSettings.habits.findIndex(h=>h.id===editingId); if(idx!==-1) currentSettings.habits[idx]={...currentSettings.habits[idx], name:n, icon:i, time:t}; } 
         else { currentSettings.habits.push({id:'h-'+Date.now(), name:n, icon:i, time:t}); } 
-        cloudAPI.saveSettingsLocal(currentSettings); 
+        
+        // ¡GUARDAMOS EN LA NUBE!
+        cloudAPI.saveSettings(currentSettings); 
+        
         btnCancelEdit.click(); renderSettingsList(); 
     });
+    
     if(btnCancelEdit) btnCancelEdit.addEventListener('click', () => { editingId=null; inputName.value=''; inputEmoji.value=''; inputTime.value=''; currentBase64Icon=null; iconPreview.classList.add('hidden'); iconPreview.innerHTML=''; btnSaveHabit.innerText="Guardar"; btnCancelEdit.classList.add('hidden'); });
     
     function renderSettingsList() {
@@ -341,7 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCharts() {
-        // Line Chart
         const labels=[], data=[]; const hoy=new Date();
         for(let i=6; i>=0; i--) { const d=new Date(); d.setDate(hoy.getDate()-i); const iso=d.toLocaleDateString('en-CA'); 
         const r=globalHistory.find(x=>x.fecha.substring(0,10)===iso); labels.push(d.toLocaleDateString('es-MX',{weekday:'short'})); data.push(r?r.progreso:0); }
@@ -351,7 +385,6 @@ document.addEventListener('DOMContentLoaded', () => {
             weeklyChart=new Chart(ctxL, {type:'line', data:{labels, datasets:[{data, borderColor:'#00e676', backgroundColor:'rgba(0,230,118,0.1)', fill:true, tension:0.4, pointRadius:4}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:100, grid:{color:'#333', borderDash:[5,5]}, border:{display:false}}, x:{grid:{display:false}, border:{display:false}}}, layout:{padding:{top:10, bottom:10, left:0, right:0}}}});
         }
 
-        // Donut Chart
         const counts={}; globalHistory.forEach(d=>{ if(d.habitos) Object.keys(d.habitos).forEach(hid=>{ if(d.habitos[hid]){ const h=currentSettings.habits.find(x=>x.id===hid); if(h) counts[h.name]=(counts[h.name]||0)+1; } }); });
         const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
         let l=[], d=[];
