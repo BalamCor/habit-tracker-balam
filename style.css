@@ -16,6 +16,14 @@ body {
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: var(--text-main);
     overflow-x: hidden;
+
+    /* --- MAGIA PARA IPHONE / ANDROID CON NOTCH --- */
+    /* Empuja el contenido hacia abajo lo que mida la Isla/Notch */
+    padding-top: env(safe-area-inset-top);
+    /* Empuja el contenido hacia arriba lo que mida la barra de inicio (Home Indicator) */
+    padding-bottom: env(safe-area-inset-bottom);
+    /* Color de fondo para rellenar esas áreas seguras */
+    min-height: 100vh;
 }
 
 /* --- LAYOUT & HEADER --- */
