@@ -11,9 +11,10 @@
         worker-src 'self' blob:; 
         connect-src 'self' https://script.google.com https://script.googleusercontent.com https://cdn.jsdelivr.net;
         img-src 'self' data: blob: https://cdn-icons-png.flaticon.com;
+        media-src 'self' blob: data:; 
     ">
 
-    <title>Habit Tracker V6 Cloud</title>
+    <title>Habit Tracker V7</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,14 +22,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10692/10692798.png">
-    
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 </head>
 <body>
 
     <main class="dashboard-container">
-        
         <header class="dash-header">
             <div class="header-top">
                 <div class="header-title-group">
@@ -39,17 +38,15 @@
                         <span id="total-days-display">0 reg.</span>
                     </div>
                 </div>
-
                 <div class="header-actions">
-                    <button id="btn-stats-scroll" class="btn-icon" title="Ver Estadísticas">📊</button>
+                    <button id="btn-stats-scroll" class="btn-icon">📊</button>
                     <div class="date-picker-container">
-                        <button id="btn-calendar-trigger" class="btn-icon" title="Cambiar fecha">📅</button>
+                        <button id="btn-calendar-trigger" class="btn-icon">📅</button>
                         <input type="date" id="global-date-picker">
                     </div>
-                    <button id="btn-settings" class="btn-icon" title="Configuración">⚙️</button>
+                    <button id="btn-settings" class="btn-icon">⚙️</button>
                 </div>
             </div>
-
             <div class="progress-hero">
                 <div class="progress-info">
                     <span class="progress-label" id="progress-label-text">Progreso Diario</span>
@@ -65,82 +62,65 @@
             <div class="section-header-row">
                 <h2 class="section-title">Hábitos</h2>
                 <div style="display: flex; gap: 8px;">
-                    <button id="btn-toggle-all" class="btn-ghost" title="Expandir/Contraer">
-                        <i class="material-icons-round" style="font-size:16px;">unfold_more</i>
-                    </button>
-                    <button id="btn-notes" class="btn-ghost" title="Notas">
-                        <i class="material-icons-round" style="font-size:16px;">edit_note</i> Notas
-                    </button>
+                    <button id="btn-toggle-all" class="btn-ghost"><i class="material-icons-round" style="font-size:16px;">unfold_more</i></button>
+                    <button id="btn-notes" class="btn-ghost"><i class="material-icons-round" style="font-size:16px;">edit_note</i> Notas</button>
                 </div>
             </div>
-
             <div id="interactive-habit-list" class="habit-list-v2"></div>
         </section>
 
         <section id="stats-section-anchor" class="dash-section stats-section">
+            <div class="section-header-row" style="margin-bottom: 20px;">
+                <h2 class="section-title">Insights 🧠</h2>
+            </div>
             <div class="chart-card full-width">
                 <h3>Historial (90 Días)</h3>
                 <div id="global-heatmap" class="heatmap-container global"></div>
             </div>
-
             <div class="charts-grid">
                 <div class="chart-card">
                     <h3>Tendencia (7 Días)</h3>
-                    <div class="chart-container">
-                        <canvas id="chart-weekly"></canvas>
-                    </div>
+                    <div class="chart-container"><canvas id="chart-weekly"></canvas></div>
                 </div>
                 <div class="chart-card">
                     <h3>Distribución</h3>
-                    <div class="chart-container">
-                        <canvas id="chart-habits"></canvas>
-                    </div>
+                    <div class="chart-container"><canvas id="chart-habits"></canvas></div>
                 </div>
             </div>
         </section>
-
     </main>
 
     <div id="settings-modal" class="modal hidden">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Configurar Hábitos</h2>
-                <button id="btn-close-settings" class="btn-close">×</button>
-            </div>
+            <div class="modal-header"><h2>Configurar</h2><button id="btn-close-settings" class="btn-close">×</button></div>
             <div class="settings-list" id="settings-list"></div>
             <div class="add-habit-form">
-                <div class="input-group">
-                    <label>Nombre</label>
-                    <input type="text" id="new-habit-name" placeholder="Ej. Meditar">
-                </div>
+                <div class="input-group"><label>Nombre</label><input type="text" id="new-habit-name" placeholder="Ej. Meditar"></div>
                 <div class="input-group">
                     <label>Icono</label>
                     <div class="icon-selector">
-                        <input type="text" id="new-habit-emoji" placeholder="😊">
-                        <span>ó</span>
+                        <input type="text" id="new-habit-emoji" placeholder="😊"><span>ó</span>
                         <label for="habit-file-upload" class="btn-upload">📂 Subir</label>
                         <input type="file" id="habit-file-upload" accept="image/*" style="display: none;">
                     </div>
                 </div>
-                <div class="input-group">
-                    <label>Hora Sugerida</label>
-                    <input type="time" id="new-habit-time">
-                </div>
+                <div class="input-group"><label>Hora</label><input type="time" id="new-habit-time"></div>
                 <div id="icon-preview" class="icon-preview hidden"></div>
                 <div class="form-actions">
                     <button id="btn-cancel-edit" class="btn-secondary hidden">Cancelar</button>
                     <button id="btn-add-habit" class="btn-small-primary">Guardar</button>
                 </div>
             </div>
+            <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #333;">
+                <p id="user-display-name" style="color: #666; font-size: 0.8rem; margin-bottom: 10px; text-align: center;">Usuario</p>
+                <button id="btn-logout" class="btn-secondary" style="width: 100%; color: #ff5252; border-color: #ff5252;">Cerrar Sesión</button>
+            </div>
         </div>
     </div>
 
     <div id="notes-modal" class="modal hidden">
         <div class="modal-content small">
-            <div class="modal-header">
-                <h2>Notas del Día 📝</h2>
-                <button id="btn-close-notes" class="btn-close">×</button>
-            </div>
+            <div class="modal-header"><h2>Notas 📝</h2><button id="btn-close-notes" class="btn-close">×</button></div>
             <textarea id="day-notes" placeholder="¿Cómo te sentiste hoy?" style="height: 150px;"></textarea>
             <button id="btn-save-notes" class="btn-small-primary full-width">Guardar Nota</button>
         </div>
@@ -148,25 +128,87 @@
 
     <div id="habit-details-modal" class="modal hidden">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modal-habit-title">Estadísticas</h2>
-                <button id="btn-close-details" class="btn-close">×</button>
-            </div>
+            <div class="modal-header"><h2 id="modal-habit-title">Estadísticas</h2><button id="btn-close-details" class="btn-close">×</button></div>
             <div class="stats-row">
                 <div class="stat-box">
-                    <span class="stat-label">Racha Actual</span>
+                    <span class="stat-label">Racha</span>
                     <span class="stat-number" id="detail-current-streak">0</span>
                     <span class="stat-sub">días</span>
                 </div>
                 <div class="stat-box gold">
-                    <span class="stat-label">Racha Legendaria 🏆</span>
+                    <span class="stat-label">Récord 🏆</span>
                     <span class="stat-number" id="detail-best-streak">0</span>
-                    <span class="stat-sub" id="detail-best-dates">--</span>
+                    <span class="stat-sub" id="detail-best-dates" style="font-size: 0.75rem; opacity: 0.8;">--</span>
                 </div>
             </div>
             <hr class="separator" style="border-color:#333; margin: 20px 0;">
             <h3 style="font-size:0.9rem; color:#888; margin-bottom:10px;">Historial (30 días)</h3>
             <div id="detail-heatmap" class="heatmap-container"></div>
+        </div>
+    </div>
+
+    <div id="setup-modal" class="modal" style="display: none; z-index: 9999; background: #121212;">
+        <div id="view-choice" class="modal-content text-center" style="max-width: 400px;">
+            <div class="modal-header justify-center"><h2>🚀 Habit Tracker V7</h2></div>
+            <p style="color:#aaa; margin-bottom:30px;">Tus hábitos, tu privacidad. <br>Conecta tu propia base de datos.</p>
+            <button id="btn-choice-new" class="btn-large-primary mb-3"><i class="material-icons-round">add_circle</i><span>Empezar de Cero</span><small>No tengo hoja de cálculo</small></button>
+            <button id="btn-choice-login" class="btn-large-secondary"><i class="material-icons-round">link</i><span>Ya tengo mi Link</span><small>Iniciar sesión</small></button>
+        </div>
+
+        <div id="view-wizard" class="modal-content hidden" style="max-width: 900px;">
+            <div class="wizard-header"><h3 id="wizard-title">Paso 1 de 5</h3><button id="btn-wizard-close" class="btn-close">×</button></div>
+            <div class="wizard-body">
+                <div class="wizard-step" data-step="1">
+                    <p class="step-desc">Necesitas tu propia hoja de Google Sheets.</p>
+                    <div class="img-container">
+                        <video src="assets/step1.mp4" class="tutorial-gif" autoplay loop muted playsinline></video>
+                        <button class="btn-video-expand" onclick="toggleFullScreen(this)"><i class="material-icons-round">fullscreen</i></button>
+                    </div>
+                    <a href="https://docs.google.com/spreadsheets/d/1Su9Zm7I3lPqLvzM7SI8waLVzMkUS1yRgFt9r8qoWCgo/copy" target="_blank" class="btn-action-link">📄 Copiar Plantilla Oficial</a>
+                </div>
+                <div class="wizard-step hidden" data-step="2">
+                    <p class="step-desc">En tu nueva hoja: Ve a <b>Extensiones</b> > <b>Apps Script</b>.</p>
+                    <div class="img-container">
+                        <video src="assets/step2.mp4" class="tutorial-gif" autoplay loop muted playsinline></video>
+                        <button class="btn-video-expand" onclick="toggleFullScreen(this)"><i class="material-icons-round">fullscreen</i></button>
+                    </div>
+                </div>
+                <div class="wizard-step hidden" data-step="3">
+                    <p class="step-desc">Botón azul <b>Implementar</b> > <b>Nueva implementación</b> > "Aplicación Web".</p>
+                    <div class="img-container">
+                        <video src="assets/step3.mp4" class="tutorial-gif" autoplay loop muted playsinline></video>
+                        <button class="btn-video-expand" onclick="toggleFullScreen(this)"><i class="material-icons-round">fullscreen</i></button>
+                    </div>
+                </div>
+                <div class="wizard-step hidden" data-step="4">
+                    <p class="step-desc">⚠️ En "Acceso", selecciona <b>"Cualquier persona"</b> (Anyone).</p>
+                    <div class="img-container">
+                        <video src="assets/step4.mp4" class="tutorial-gif" autoplay loop muted playsinline></video>
+                        <button class="btn-video-expand" onclick="toggleFullScreen(this)"><i class="material-icons-round">fullscreen</i></button>
+                    </div>
+                </div>
+                <div class="wizard-step hidden" data-step="5">
+                    <p class="step-desc">¡Listo! Copia la URL <code>/exec</code> y pégala aquí:</p>
+                    <div class="input-group"><input type="text" id="wizard-input-url" placeholder="https://script.google.com/.../exec"></div>
+                    <div class="input-group"><input type="text" id="wizard-input-name" placeholder="Tu Nombre"></div>
+                    <p id="wizard-error" class="error-msg hidden">URL inválida</p>
+                </div>
+            </div>
+            <div class="wizard-footer">
+                <button id="btn-wizard-back" class="btn-secondary hidden">Atrás</button>
+                <button id="btn-wizard-next" class="btn-small-primary">Siguiente ➝</button>
+                <button id="btn-wizard-finish" class="btn-small-primary hidden">🔥 Conectar</button>
+            </div>
+        </div>
+
+        <div id="view-login" class="modal-content hidden" style="max-width: 400px;">
+            <div class="modal-header"><h2>🔗 Conectar</h2><button id="btn-login-back" class="btn-close">↩</button></div>
+            <div class="add-habit-form">
+                <div class="input-group"><label>Tu Nombre</label><input type="text" id="login-username" placeholder="Ej. Alex"></div>
+                <div class="input-group"><label>URL de Apps Script</label><input type="text" id="login-api-url" placeholder="https://script.google.com/.../exec"></div>
+                <button id="btn-login-connect" class="btn-small-primary mt-2">Entrar</button>
+                <p id="login-error" class="error-msg hidden">URL inválida</p>
+            </div>
         </div>
     </div>
 
