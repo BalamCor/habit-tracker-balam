@@ -209,9 +209,34 @@ input:focus { outline: none; border-color: var(--accent); }
 
 /* Pantalla Completa */
 .img-container.is-fullscreen {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; background: rgba(0,0,0,0.95); border-radius: 0; margin: 0; padding: 20px; box-sizing: border-box;
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh; 
+    z-index: 10000; 
+    background: rgba(0,0,0,0.95); 
+    border-radius: 0; 
+    margin: 0; 
+    
+    box-sizing: border-box; /* Vital para que el padding no rompa el ancho */
+
+    /* --- CORRECCIÓN IPHONE --- */
+    /* Usamos max() para decir: "Usa el Notch, pero si es 0 (PC), usa 20px" */
+    padding-top: max(20px, env(safe-area-inset-top)); 
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-left: 20px;
+    padding-right: 20px;
 }
 .img-container.is-fullscreen video { object-fit: contain; max-width: 100%; max-height: 100%; }
-.img-container.is-fullscreen .btn-video-expand { top: 20px; right: 20px; bottom: auto; background: rgba(255, 50, 50, 0.8); border-color: transparent; }
+/* Y ajustamos la posición del botón de cerrar para que respete ese nuevo padding */
+.img-container.is-fullscreen .btn-video-expand { 
+    /* En lugar de top fijo, dejamos que el padding del contenedor lo empuje */
+    top: max(20px, env(safe-area-inset-top)); 
+    right: 20px; 
+    bottom: auto; 
+    background: rgba(255, 50, 50, 0.8); 
+    border-color: transparent; 
+}
 
 @media (min-width: 800px) { .charts-grid { grid-template-columns: 1.8fr 1.2fr; gap: 20px; } }
