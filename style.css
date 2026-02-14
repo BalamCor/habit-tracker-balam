@@ -37,10 +37,36 @@ h1 { margin: 0; font-size: 1.6rem; background: linear-gradient(45deg, #fff, #aaa
 .btn-icon { background: transparent; border: 1px solid #333; color: #888; font-size: 1.2rem; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; }
 .btn-icon:hover { background: #333; color: white; border-color: #555; }
 
-/* DATE PICKER */
-.date-picker-container { position: relative; }
-#btn-calendar-trigger { z-index: 1; }
-#global-date-picker { position: absolute; top: 100%; left: 0; width: 0; height: 0; opacity: 0; border: none; padding: 0; margin: 0; pointer-events: none; }
+/* DATE PICKER (FIX PARA IPHONE) */
+.date-picker-container { 
+    position: relative; 
+    width: 40px; 
+    height: 40px; /* Forzamos el tamaño para que coincida con el botón */
+}
+
+#btn-calendar-trigger { 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* El botón se queda visualmente abajo */
+}
+
+#global-date-picker { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    opacity: 0; /* Totalmente invisible */
+    z-index: 2; /* Físicamente encima del botón para recibir el clic */
+    cursor: pointer;
+    border: none;
+    padding: 0;
+    margin: 0;
+    -webkit-appearance: none; /* Limpieza extra para iOS */
+}
 
 /* BARRA PROGRESO */
 .progress-hero { background: var(--card-bg); padding: 15px 20px; border-radius: 14px; border: 1px solid #333; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
