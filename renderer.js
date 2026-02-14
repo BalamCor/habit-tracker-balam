@@ -99,17 +99,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- SETUP INICIAL ---
     function isRealMobile() { return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent); }
 
-    // LÓGICA DE ARRANQUE CON SALTO INTELIGENTE
+    // LÓGICA DE ARRANQUE CON SALTO INTELIGENTE Y DETECCIÓN DE DISPOSITIVO
     if (!SHEET_API_URL) {
         if(setupModal) setupModal.style.display = 'flex';
         
-        // ¿Viene redirigido desde el botón "Conectar Nube"?
+        // ¿Viene redirigido desde el botón "Conectar Nube"? (Flag en memoria)
         if (localStorage.getItem('habit_jump_to_wizard') === 'true') {
             localStorage.removeItem('habit_jump_to_wizard');
-            showView('wizard');
-            currentStep = 1;
-            updateWizardStep();
+            
+            if (isRealMobile()) {
+                // 📱 MÓVIL: Asumimos que ya creó la hoja en PC, pedimos directo el Link
+                alert("ℹ️ Recordatorio:\n\nLa creación de la base de datos se debe hacer en una computadora.\n\nSi ya tienes tu URL del Script, pégala aquí para sincronizar.");
+                showView('login');
+            } else {
+                // 💻 DESKTOP: Mostramos el tutorial paso a paso
+                showView('wizard');
+                currentStep = 1;
+                updateWizardStep();
+            }
         } else {
+            // Flujo normal de primera vez
             if(isRealMobile()) { showView('mobile_block'); setupMobileSharing(); } else { showView('choice'); }
         }
     } else {
