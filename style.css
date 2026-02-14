@@ -18,11 +18,8 @@ body {
     overflow-x: hidden;
 
     /* --- MAGIA PARA IPHONE / ANDROID CON NOTCH --- */
-    /* Empuja el contenido hacia abajo lo que mida la Isla/Notch */
     padding-top: env(safe-area-inset-top);
-    /* Empuja el contenido hacia arriba lo que mida la barra de inicio (Home Indicator) */
     padding-bottom: env(safe-area-inset-bottom);
-    /* Color de fondo para rellenar esas áreas seguras */
     min-height: 100vh;
 }
 
@@ -124,21 +121,26 @@ h1 { margin: 0; font-size: 1.6rem; background: linear-gradient(45deg, #fff, #aaa
 .heatmap-day.l4 { background: #39d353; box-shadow: 0 0 4px #39d353; }
 
 /* --- MODALES GENERALES --- */
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(5px); }
 .hidden { display: none !important; }
-.modal-content { background: var(--card-bg); padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid #444; max-height: 85vh; display: flex; flex-direction: column; overflow-y: auto; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.modal-content { background: var(--card-bg); padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; border: 1px solid #444; max-height: 90vh; display: flex; flex-direction: column; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .btn-close { background: none; border: none; font-size: 1.5rem; color: #666; cursor: pointer; }
 
 /* FORMULARIOS (Login & Settings) */
-.add-habit-form { background: #151515; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px solid #333; display: flex; flex-direction: column; gap: 10px; }
+.add-habit-form { background: #151515; padding: 15px; border-radius: 10px; margin-top: 10px; border: 1px solid #333; display: flex; flex-direction: column; gap: 12px; }
 .input-group label { font-size: 0.75rem; color: #888; margin-bottom: 4px; display:block; }
 input[type="text"], input[type="time"], textarea { background: #252525; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.95rem; }
 input:focus { outline: none; border-color: var(--accent); }
+
+/* VALIDACIONES */
+.input-error { border: 1px solid var(--danger) !important; box-shadow: 0 0 8px rgba(255, 82, 82, 0.4); }
+.input-success { border: 1px solid var(--accent) !important; box-shadow: 0 0 8px rgba(0, 230, 118, 0.4); }
+
 .icon-selector { display: flex; align-items: center; gap: 10px; }
 #new-habit-emoji { width: 50px; text-align: center; }
-.btn-upload { background: #333; color: #aaa; padding: 8px; border-radius: 6px; cursor: pointer; flex-grow: 1; text-align: center; border: 1px solid #444; font-size: 0.85rem; }
-.form-actions { display: flex; gap: 10px; margin-top: 10px; }
+.btn-upload { background: #333; color: #aaa; padding: 12px; border-radius: 6px; cursor: pointer; flex-grow: 1; text-align: center; border: 1px solid #444; font-size: 0.85rem; }
+.form-actions { display: flex; gap: 10px; margin-top: 15px; }
 .btn-small-primary { background: var(--accent); color: #000; font-weight: bold; border: none; padding: 12px; border-radius: 8px; cursor: pointer; flex: 1; font-size: 0.95rem; }
 .btn-secondary { background: transparent; border: 1px solid #555; color: #aaa; padding: 10px; border-radius: 8px; cursor: pointer; flex: 1; font-size: 0.9rem; }
 
@@ -161,45 +163,44 @@ input:focus { outline: none; border-color: var(--accent); }
 #detail-heatmap .heatmap-day { width: 15px; height: 15px; }
 #detail-heatmap .heatmap-day.done { background-color: var(--accent); box-shadow: 0 0 5px var(--accent); }
 
-/* --- ESTILOS DEL ONBOARDING & WIZARD (LO QUE FALTABA) --- */
+/* --- ESTILOS DEL ONBOARDING & WIZARD --- */
 .text-center { text-align: center; }
 .justify-center { justify-content: center; }
 .mb-3 { margin-bottom: 15px; }
 .mt-2 { margin-top: 15px; }
 
-/* Botones Grandes de Elección */
+/* Botones Grandes */
 .btn-large-primary, .btn-large-secondary {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     width: 100%; padding: 25px; border-radius: 12px; border: 1px solid; cursor: pointer; transition: all 0.2s;
-    background: #1a1a1a;
+    background: #1a1a1a; box-sizing: border-box; margin-bottom: 15px;
 }
-.btn-large-primary { border-color: var(--accent); color: #fff; background: rgba(0, 230, 118, 0.05); }
+.btn-large-primary { border-color: var(--accent); color: #fff; background: rgba(0, 230, 118, 0.08); }
 .btn-large-primary:hover { background: var(--accent); color: #000; transform: translateY(-2px); }
 .btn-large-secondary { border-color: #444; color: #aaa; background: transparent; }
 .btn-large-secondary:hover { border-color: #fff; color: #fff; transform: translateY(-2px); }
 
 .btn-large-primary i, .btn-large-secondary i { font-size: 36px; margin-bottom: 10px; }
-.btn-large-primary span, .btn-large-secondary span { font-weight: bold; font-size: 1.1rem; }
-.btn-large-primary small, .btn-large-secondary small { font-weight: normal; font-size: 0.8rem; opacity: 0.7; margin-top: 4px; }
+.btn-large-primary span, .btn-large-secondary span { font-weight: bold; font-size: 1.1rem; display: block; }
+.btn-large-primary small, .btn-large-secondary small { font-weight: normal; font-size: 0.85rem; opacity: 0.7; margin-top: 5px; display: block; }
 
-/* Wizard (Paso a Paso) */
-.wizard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
-.wizard-body { min-height: 300px; display: flex; flex-direction: column; justify-content: center; }
-.step-desc { font-size: 1.1rem; color: #e0e0e0; margin-bottom: 20px; line-height: 1.5; text-align: center; }
+/* Wizard */
+.wizard-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+.wizard-body { display: flex; flex-direction: column; justify-content: center; padding-bottom: 10px; }
+.step-desc { font-size: 1.1rem; color: #e0e0e0; margin-bottom: 20px; line-height: 1.6; text-align: center; }
 
-/* Contenedor Video */
-#view-wizard { width: 95%; max-width: 900px; height: auto; max-height: 90vh; }
+#view-wizard { width: 95%; max-width: 800px; height: auto; max-height: 90vh; overflow-y: auto; }
 .img-container {
-    width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 12px; border: 1px solid #333; 
-    overflow: hidden; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; position: relative;
+    width: 100%; aspect-ratio: 16 / 9; max-height: 50vh; background: #000; border-radius: 12px; border: 1px solid #333;
+    overflow: hidden; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; position: relative;
 }
-.tutorial-gif { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.tutorial-gif { width: 100%; height: 100%; object-fit: contain; background: #000; display: block; }
 
 .btn-action-link { display: block; background: #222; padding: 15px; text-align: center; color: var(--accent); text-decoration: none; border-radius: 8px; border: 1px solid #333; margin-top: 10px; font-weight: bold; font-size: 1rem; transition: background 0.2s; }
 .btn-action-link:hover { background: #333; border-color: var(--accent); }
 
 .wizard-footer { display: flex; justify-content: space-between; margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; }
-.error-msg { color: var(--danger); font-size: 0.9rem; text-align: center; margin-top: 10px; }
+.error-msg { color: var(--danger); font-size: 0.9rem; text-align: center; margin-top: 10px; display: block; }
 
 /* Botón Expandir Video */
 .btn-video-expand {
@@ -209,34 +210,50 @@ input:focus { outline: none; border-color: var(--accent); }
 
 /* Pantalla Completa */
 .img-container.is-fullscreen {
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100vw; 
-    height: 100vh; 
-    z-index: 10000; 
-    background: rgba(0,0,0,0.95); 
-    border-radius: 0; 
-    margin: 0; 
-    
-    box-sizing: border-box; /* Vital para que el padding no rompa el ancho */
-
-    /* --- CORRECCIÓN IPHONE --- */
-    /* Usamos max() para decir: "Usa el Notch, pero si es 0 (PC), usa 20px" */
-    padding-top: max(20px, env(safe-area-inset-top)); 
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
-    padding-left: 20px;
-    padding-right: 20px;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; background: rgba(0,0,0,0.95); border-radius: 0; margin: 0; padding: 20px;
+    box-sizing: border-box; max-height: none;
+    padding-top: calc(env(safe-area-inset-top) + 20px); 
+    padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
+    padding-left: 20px; padding-right: 20px;
 }
 .img-container.is-fullscreen video { object-fit: contain; max-width: 100%; max-height: 100%; }
-/* Y ajustamos la posición del botón de cerrar para que respete ese nuevo padding */
-.img-container.is-fullscreen .btn-video-expand { 
-    /* En lugar de top fijo, dejamos que el padding del contenedor lo empuje */
-    top: max(20px, env(safe-area-inset-top)); 
-    right: 20px; 
-    bottom: auto; 
-    background: rgba(255, 50, 50, 0.8); 
-    border-color: transparent; 
+.img-container.is-fullscreen .btn-video-expand {
+    top: calc(env(safe-area-inset-top) + 15px); right: 20px; bottom: auto; background: rgba(255, 50, 50, 0.8); border-color: transparent;
 }
 
 @media (min-width: 800px) { .charts-grid { grid-template-columns: 1.8fr 1.2fr; gap: 20px; } }
+
+/* --- NUEVOS ESTILOS V9 (NUBE/OFFLINE) --- */
+
+/* Badge del Header (Nube / Local) */
+.status-badge {
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    display: inline-flex; /* Para que se alinee bien */
+    align-items: center;
+    gap: 5px;
+    border: 1px solid rgba(0, 230, 118, 0.3);
+    margin-right: 10px; /* Separación del título */
+}
+
+.status-badge i { font-size: 14px; }
+
+/* Estilo cuando es Local (Gris) */
+.status-badge.local {
+    background: rgba(255, 255, 255, 0.1);
+    color: #aaa;
+    border-color: #444;
+}
+
+/* Ajuste visual para los botones secundarios nuevos */
+#btn-choice-offline, #btn-mobile-offline {
+    transition: all 0.2s;
+}
+#btn-choice-offline:hover, #btn-mobile-offline:hover {
+    border-color: #fff;
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+}
