@@ -14,7 +14,7 @@
         media-src 'self' blob: data:; 
     ">
 
-    <title>Habit Tracker V7</title>
+    <title>Habit Tracker V9 Híbrido</title>
 
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -32,6 +32,9 @@
             <div class="header-top">
                 <div class="header-title-group">
                     <h1 id="dashboard-title">Dashboard 🚀</h1>
+                    <div id="status-indicator" class="status-badge local hidden">
+                        <i class="material-icons-round">cloud_off</i> <span>Local</span>
+                    </div>
                     <div class="kpi-mini-row">
                         <span id="streak-display">🔥 ...</span>
                         <span class="separator-dot">•</span>
@@ -93,6 +96,28 @@
     <div id="settings-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header"><h2>Configurar</h2><button id="btn-close-settings" class="btn-close">×</button></div>
+            
+            <div id="connect-cloud-banner" class="hidden" style="background: rgba(0, 230, 118, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--accent); text-align: center;">
+                <p style="font-size: 0.9rem; color: #fff; margin: 0 0 10px 0;">☁️ <b>Estás en modo Local</b></p>
+                <p style="font-size: 0.8rem; color: #aaa; margin: 0 0 10px 0;">Conecta una hoja de Google para respaldar tus datos.</p>
+                <button id="btn-connect-cloud-now" class="btn-small-primary" style="width:100%">Conectar Nube</button>
+            </div>
+
+            <div id="key-backup-section" style="background: #252525; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px dashed #444;">
+                <p style="font-size: 0.85rem; color: #aaa; margin: 0 0 10px 0;">🔑 <b>Respalda tu Llave</b></p>
+                <div style="display: flex; gap: 8px;">
+                    <a id="btn-recover-key-wa" href="#" target="_blank" class="btn-secondary" style="flex:1; border-color: #25D366; color: #25D366; display: flex; justify-content: center; align-items: center; padding: 8px;">
+                        <i class="material-icons-round" style="font-size:16px;">chat</i> WA
+                    </a>
+                    <a id="btn-recover-key-email" href="#" target="_blank" class="btn-secondary" style="flex:1; display: flex; justify-content: center; align-items: center; padding: 8px;">
+                        <i class="material-icons-round" style="font-size:16px;">email</i> Mail
+                    </a>
+                    <button id="btn-recover-key-copy" class="btn-secondary" style="flex:1; display: flex; justify-content: center; align-items: center; padding: 8px;">
+                        <i class="material-icons-round" style="font-size:16px;">content_copy</i> Copiar
+                    </button>
+                </div>
+            </div>
+
             <div class="settings-list" id="settings-list"></div>
             <div class="add-habit-form">
                 <div class="input-group"><label>Nombre</label><input type="text" id="new-habit-name" placeholder="Ej. Meditar"></div>
@@ -148,11 +173,44 @@
     </div>
 
     <div id="setup-modal" class="modal" style="display: none; z-index: 9999; background: #121212;">
-        <div id="view-choice" class="modal-content text-center" style="max-width: 400px;">
-            <div class="modal-header justify-center"><h2>🚀 Habit Tracker V7</h2></div>
+        
+        <div id="view-mobile-block" class="modal-content text-center hidden" style="max-width: 350px;">
+            <div class="modal-header justify-center"><h2 style="font-size: 3rem; margin:0;">💻</h2></div>
+            <h3 style="color: #fff; margin-bottom: 10px;">Configuración Desktop</h3>
+            <p style="color:#aaa; font-size: 0.95rem; line-height: 1.5; margin-bottom: 25px;">Por seguridad, <b>necesitas una computadora</b> para crear tu "Búnker de Datos".</p>
+            <div style="background: #222; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px dashed #444;">
+                <p style="font-size: 0.8rem; color: #888; margin:0 0 10px 0;">Envíate el link para seguir allá:</p>
+                <div style="display: flex; gap: 8px;">
+                    <a id="btn-share-wa" href="#" target="_blank" class="btn-secondary" style="flex:1; border-color: #25D366; color: #25D366; display:flex; justify-content:center; align-items:center;">
+                        <i class="material-icons-round" style="font-size:16px;">chat</i> WA
+                    </a>
+                    <a id="btn-share-mail" href="#" target="_blank" class="btn-secondary" style="flex:1; display:flex; justify-content:center; align-items:center;">
+                        <i class="material-icons-round" style="font-size:16px;">email</i> Mail
+                    </a>
+                    <button id="btn-share-copy" class="btn-secondary" style="flex:1; display:flex; justify-content:center; align-items:center;">
+                        <i class="material-icons-round" style="font-size:16px;">content_copy</i>
+                    </button>
+                </div>
+            </div>
+
+            <button id="btn-mobile-offline" class="btn-secondary" style="width: 100%; border-color: #666; color: #ccc; margin-bottom: 15px; padding: 12px;">
+                📱 Usar en este dispositivo (Offline)
+            </button>
+            <p style="font-size: 0.75rem; color: #666; margin-top: -10px; margin-bottom: 20px;">* Los datos se guardarán solo aquí.</p>
+
+            <button id="btn-mobile-bypass" style="background:none; border:none; color:#666; font-size:0.85rem; text-decoration: underline; cursor:pointer; padding: 10px;">Ya tengo mi link, déjame entrar</button>
+        </div>
+
+        <div id="view-choice" class="modal-content text-center hidden" style="max-width: 400px;">
+            <div class="modal-header justify-center"><h2>🚀 Habit Tracker V9</h2></div>
             <p style="color:#aaa; margin-bottom:30px;">Tus hábitos, tu privacidad. <br>Conecta tu propia base de datos.</p>
+            
             <button id="btn-choice-new" class="btn-large-primary mb-3"><i class="material-icons-round">add_circle</i><span>Empezar de Cero</span><small>No tengo hoja de cálculo</small></button>
-            <button id="btn-choice-login" class="btn-large-secondary"><i class="material-icons-round">link</i><span>Ya tengo mi Link</span><small>Iniciar sesión</small></button>
+            <button id="btn-choice-login" class="btn-large-secondary mb-3"><i class="material-icons-round">link</i><span>Ya tengo mi Link</span><small>Iniciar sesión</small></button>
+            
+            <button id="btn-choice-offline" class="btn-secondary" style="width: 100%; border-color: #444; color: #888; font-size: 0.85rem; padding: 12px;">
+                🏠 Usar Modo Offline (Solo este dispositivo)
+            </button>
         </div>
 
         <div id="view-wizard" class="modal-content hidden" style="max-width: 900px;">
